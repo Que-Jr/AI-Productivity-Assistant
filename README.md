@@ -63,8 +63,8 @@ This project was developed as part of an AI-powered productivity application ass
 ### Installation
 
 ```bash
-git clone <https://github.com/Que-Jr/work-genie-hub.git>
-cd <work-genie-hub>
+git clone <https://github.com/Que-Jr/AI-Productivity-Assistant.git>
+cd <AI-Productivity-Assistant>
 npm install
 npm run dev
 ```
