@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Bell, Menu, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,9 +14,11 @@ export function TopBar({
   onNavigate: (key: ViewKey) => void;
   onLogout: () => void;
 }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b bg-background/85 px-4 backdrop-blur-md md:px-6">
-      <Sheet>
+      <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
         <SheetTrigger asChild>
           <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open navigation">
             <Menu className="size-5" aria-hidden />
@@ -23,9 +26,20 @@ export function TopBar({
         </SheetTrigger>
         <SheetContent side="left" className="w-72 p-0">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
-          <AppSidebar active={active} onNavigate={onNavigate} onLogout={onLogout} />
+          <AppSidebar
+            active={active}
+            onNavigate={(key) => {
+              setMenuOpen(false);
+              onNavigate(key);
+            }}
+            onLogout={() => {
+              setMenuOpen(false);
+              onLogout();
+            }}
+          />
         </SheetContent>
       </Sheet>
+
 
       <form
         className="relative hidden max-w-md flex-1 sm:block"

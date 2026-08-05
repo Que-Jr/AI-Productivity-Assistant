@@ -1,11 +1,18 @@
 import { useEffect, useRef, useState } from "react";
-import { Bot, Eraser, Loader2, MessagesSquare, Send, User } from "lucide-react";
+import { Bot, Eraser, Loader2, MessagesSquare, Send, User, UserCog } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { chatWithAssistant } from "@/lib/ai-service";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "./PageHeader";
+import {
+  CHAT_PROFILE_KEY,
+  ChatProfileDialog,
+  loadChatProfile,
+  type ChatProfile,
+} from "./ChatProfileDialog";
+
 
 type ChatMessage = {
   id: string;
@@ -50,15 +57,41 @@ export function ChatbotView({ onMessage }: { onMessage: () => void }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [profile, setProfile] = useState<ChatProfile | null>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const stored = loadChatProfile();
+    setProfile(stored);
+    setHydrated(true);
+    if (!stored) setProfileOpen(true);
+  }, []);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
+  function saveProfile(next: ChatProfile) {
+    setProfile(next);
+    try {
+      window.localStorage.setItem(CHAT_PROFILE_KEY, JSON.stringify(next));
+    } catch {
+      /* ignore storage errors */
+    }
+    setProfileOpen(false);
+    toast.success(`Profile saved — responses personalized for ${next.fullName.split(" ")[0]}.`);
+  }
+
   async function send(text: string) {
     const trimmed = text.trim();
     if (!trimmed || loading) return;
+    if (!profile) {
+      setProfileOpen(true);
+      toast.info("Please complete your profile before starting the conversation.");
+      return;
+    }
 
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
@@ -71,7 +104,7 @@ export function ChatbotView({ onMessage }: { onMessage: () => void }) {
     setLoading(true);
 
     try {
-      const reply = await chatWithAssistant(trimmed);
+      const reply = await chatWithAssistant(trimmed, profile);
       setMessages((prev) => [
         ...prev,
         { id: crypto.randomUUID(), role: "assistant", content: reply, time: now() },
@@ -86,24 +119,42 @@ export function ChatbotView({ onMessage }: { onMessage: () => void }) {
 
   return (
     <div className="space-y-6">
+      <ChatProfileDialog
+        open={profileOpen}
+        onOpenChange={setProfileOpen}
+        profile={profile}
+        onSave={saveProfile}
+        dismissible={Boolean(profile)}
+      />
+
       <div className="flex flex-wrap items-start justify-between gap-4">
         <PageHeader
           icon={MessagesSquare}
           title="AI Workplace Chatbot"
-          description="Ask anything about your work — planning, processes, writing or preparation."
+          description={
+            profile
+              ? `Personalized for ${profile.fullName} · ${profile.jobTitle} · ${profile.responseStyle} responses.`
+              : "Ask anything about your work — planning, processes, writing or preparation."
+          }
         />
-        <Button
-          variant="outline"
-          className="gap-2"
-          onClick={() => {
-            setMessages([]);
-            toast.success("Conversation cleared");
-          }}
-          disabled={messages.length === 0}
-        >
-          <Eraser className="size-4" aria-hidden />
-          Clear conversation
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => setProfileOpen(true)}>
+            <UserCog className="size-4" aria-hidden />
+            Update Profile
+          </Button>
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={() => {
+              setMessages([]);
+              toast.success("Conversation cleared");
+            }}
+            disabled={messages.length === 0}
+          >
+            <Eraser className="size-4" aria-hidden />
+            Clear conversation
+          </Button>
+        </div>
       </div>
 
       <section className="surface-card flex h-[calc(100vh-19rem)] min-h-[26rem] flex-col overflow-hidden">
@@ -113,11 +164,21 @@ export function ChatbotView({ onMessage }: { onMessage: () => void }) {
               <span className="gradient-primary flex size-14 items-center justify-center rounded-2xl shadow-soft">
                 <Bot className="size-7 text-primary-foreground" aria-hidden />
               </span>
-              <h2 className="mt-4 text-lg font-semibold">How can I help you today?</h2>
+              <h2 className="mt-4 text-lg font-semibold">
+                {profile ? `How can I help you today, ${profile.fullName.split(" ")[0]}?` : "Let's set up your profile"}
+              </h2>
               <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-                Start with one of these prompts or type your own question.
+                {hydrated && !profile
+                  ? "Complete the short onboarding form so the assistant can tailor answers to your role."
+                  : "Start with one of these prompts or type your own question."}
               </p>
+              {hydrated && !profile ? (
+                <Button className="mt-5" onClick={() => setProfileOpen(true)}>
+                  Complete onboarding
+                </Button>
+              ) : null}
               <div className="mt-5 flex flex-wrap justify-center gap-2">
+
                 {EXAMPLES.map((example) => (
                   <button
                     key={example}
@@ -206,12 +267,24 @@ export function ChatbotView({ onMessage }: { onMessage: () => void }) {
               }
             }}
             rows={1}
-            placeholder="Ask about planning, processes or preparation…"
+            disabled={!profile}
+            placeholder={
+              profile
+                ? "Ask about planning, processes or preparation…"
+                : "Complete your profile to start chatting…"
+            }
             className="max-h-40 min-h-11 flex-1 resize-none rounded-xl"
           />
-          <Button type="submit" size="icon" className="size-11 rounded-xl" disabled={loading} aria-label="Send message">
+          <Button
+            type="submit"
+            size="icon"
+            className="size-11 rounded-xl"
+            disabled={loading || !profile}
+            aria-label="Send message"
+          >
             <Send className="size-4" aria-hidden />
           </Button>
+
         </form>
       </section>
     </div>
