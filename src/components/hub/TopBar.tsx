@@ -52,7 +52,7 @@ export function TopBar({
           <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-primary" />
         </Button>
         <span className="flex size-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
-          AM
+          QJ
         </span>
       </div>
     </header>
