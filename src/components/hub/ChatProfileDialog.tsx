@@ -103,9 +103,9 @@ export function ChatProfileDialog({
       }}
     >
       <DialogContent
-        className="max-h-[90vh] overflow-y-auto sm:max-w-lg"
-        showCloseButton={dismissible}
+        className={`max-h-[90vh] overflow-y-auto sm:max-w-lg ${dismissible ? "" : "[&>button]:hidden"}`}
         onInteractOutside={(e) => {
+
           if (!dismissible) e.preventDefault();
         }}
         onEscapeKeyDown={(e) => {
