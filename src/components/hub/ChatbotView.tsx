@@ -267,12 +267,24 @@ export function ChatbotView({ onMessage }: { onMessage: () => void }) {
               }
             }}
             rows={1}
-            placeholder="Ask about planning, processes or preparation…"
+            disabled={!profile}
+            placeholder={
+              profile
+                ? "Ask about planning, processes or preparation…"
+                : "Complete your profile to start chatting…"
+            }
             className="max-h-40 min-h-11 flex-1 resize-none rounded-xl"
           />
-          <Button type="submit" size="icon" className="size-11 rounded-xl" disabled={loading} aria-label="Send message">
+          <Button
+            type="submit"
+            size="icon"
+            className="size-11 rounded-xl"
+            disabled={loading || !profile}
+            aria-label="Send message"
+          >
             <Send className="size-4" aria-hidden />
           </Button>
+
         </form>
       </section>
     </div>
