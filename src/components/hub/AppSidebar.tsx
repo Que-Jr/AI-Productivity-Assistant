@@ -70,10 +70,10 @@ export function AppSidebar({
       <div className="space-y-3 border-t p-4">
         <div className="flex items-center gap-3 rounded-xl bg-muted/60 p-3">
           <span className="flex size-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
-            AM
+            QJ
           </span>
           <div className="min-w-0 leading-tight">
-            <p className="truncate text-sm font-semibold">Amara Mokoena</p>
+            <p className="truncate text-sm font-semibold">Que Jr Sibuyi</p>
             <p className="truncate text-xs text-muted-foreground">Operations Lead</p>
           </div>
         </div>

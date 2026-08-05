@@ -70,7 +70,7 @@ export function DashboardView({
             Three AI tools, one workspace
           </span>
           <h1 className="mt-4 max-w-2xl text-2xl font-bold text-primary-foreground md:text-3xl">
-            Good day, Amara. Your workday is planned and ready.
+            Good day, Que Jr. Your workday is planned and ready.
           </h1>
           <p className="mt-2 max-w-xl text-sm text-primary-foreground/85">
             Plan tasks, research faster and get answers without switching between five different
