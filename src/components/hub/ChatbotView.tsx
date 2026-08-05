@@ -1,11 +1,18 @@
 import { useEffect, useRef, useState } from "react";
-import { Bot, Eraser, Loader2, MessagesSquare, Send, User } from "lucide-react";
+import { Bot, Eraser, Loader2, MessagesSquare, Send, User, UserCog } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { chatWithAssistant } from "@/lib/ai-service";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "./PageHeader";
+import {
+  CHAT_PROFILE_KEY,
+  ChatProfileDialog,
+  loadChatProfile,
+  type ChatProfile,
+} from "./ChatProfileDialog";
+
 
 type ChatMessage = {
   id: string;
