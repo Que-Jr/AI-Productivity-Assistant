@@ -159,24 +159,62 @@ export async function runResearch(
   };
 }
 
-export async function chatWithAssistant(message: string): Promise<string> {
+export type AssistantProfile = {
+  fullName: string;
+  jobTitle: string;
+  department: string;
+  company?: string;
+  workGoal: string;
+  responseStyle: "Concise" | "Detailed" | "Step-by-step";
+  language?: string;
+};
+
+function personalize(body: string, profile?: AssistantProfile | null): string {
+  if (!profile) return body;
+  const firstName = profile.fullName.trim().split(/\s+/)[0] || profile.fullName;
+  const context = `Tailored for your work in **${profile.workGoal}** as ${profile.jobTitle}${
+    profile.department ? ` (${profile.department})` : ""
+  }${profile.company ? ` at ${profile.company}` : ""}.`;
+
+  if (profile.responseStyle === "Concise") {
+    const lines = body.split("\n").filter(Boolean).slice(0, 6).join("\n");
+    return `${firstName}, here's the short version:\n\n${lines}\n\n${context}`;
+  }
+  if (profile.responseStyle === "Step-by-step") {
+    const steps = body
+      .split("\n")
+      .filter((line) => line.trim())
+      .map((line, index) => `**Step ${index + 1}.** ${line.replace(/^[-*\d.]+\s*/, "")}`)
+      .join("\n");
+    return `${firstName}, follow these steps:\n\n${steps}\n\n${context}`;
+  }
+  return `Hi ${firstName} — here's a detailed view:\n\n${body}\n\n${context}${
+    profile.language ? `\n\n_Preferred language noted: ${profile.language}._` : ""
+  }`;
+}
+
+export async function chatWithAssistant(
+  message: string,
+  profile?: AssistantProfile | null,
+): Promise<string> {
   await delay(1100);
   const text = message.toLowerCase();
 
+  let body: string;
   if (text.includes("workday") || text.includes("plan my")) {
-    return `Here's a balanced plan for your day:\n\n**09:00 – 11:00 · Deep work** — your highest-priority deliverable, notifications off.\n**11:00 – 11:30 · Comms** — inbox and approvals in one batch.\n**11:30 – 13:00 · Collaboration** — reviews, pairing, unblocking others.\n**14:00 – 15:30 · Second focus block** — follow-through on the morning's work.\n**15:30 – 16:30 · Admin & documentation.**\n**16:30 – 17:00 · Wrap-up** — log progress and set tomorrow's top three.\n\nWant me to turn this into scheduled tasks in the Task Planner?`;
+    body = `Here's a balanced plan for your day:\n\n**09:00 – 11:00 · Deep work** — your highest-priority deliverable, notifications off.\n**11:00 – 11:30 · Comms** — inbox and approvals in one batch.\n**11:30 – 13:00 · Collaboration** — reviews, pairing, unblocking others.\n**14:00 – 15:30 · Second focus block** — follow-through on the morning's work.\n**15:30 – 16:30 · Admin & documentation.**\n**16:30 – 17:00 · Wrap-up** — log progress and set tomorrow's top three.`;
+  } else if (text.includes("agile")) {
+    body = `**Agile** is an iterative approach to delivering work in small, reviewable increments.\n\n- **Short cycles** (1–2 week sprints) so feedback arrives early.\n- **Cross-functional teams** that own an outcome end to end.\n- **Working output over documentation** — demonstrate, then refine.\n- **Regular retrospectives** to improve the process itself.`;
+  } else if (text.includes("summar")) {
+    body = `Here's a structured summary:\n\n**Objective** — what the project is trying to achieve.\n**Status** — on track, with two dependencies pending.\n**Risks** — unclear ownership on integration; timeline is tight around review cycles.\n**Next steps** — confirm owners, lock scope, book the review.`;
+  } else if (text.includes("productiv")) {
+    body = `Four changes with the largest effect:\n\n1. **Protect one 90-minute focus block** each morning before meetings.\n2. **Limit work in progress** to three active tasks.\n3. **Batch communication** into two fixed windows.\n4. **Close the loop daily** — a 10-minute review beats a weekly catch-up.`;
+  } else if (text.includes("meeting")) {
+    body = `To prepare effectively:\n\n- **Purpose** — write the decision the meeting must produce.\n- **Pre-read** — send context 24 hours ahead so time is spent deciding.\n- **Agenda** — three items maximum, each with a time box.\n- **Roles** — facilitator, note-taker, decision owner.\n- **Close** — restate decisions, owners, and dates before ending.`;
+  } else {
+    body = `Here's how I'd approach "${message.trim()}":\n\n- **Clarify the outcome** you want before choosing the method.\n- **Break it into two or three concrete steps** you can start today.\n- **Set a checkpoint** so you can course-correct early.`;
   }
-  if (text.includes("agile")) {
-    return `**Agile** is an iterative approach to delivering work in small, reviewable increments.\n\n- **Short cycles** (1–2 week sprints) so feedback arrives early.\n- **Cross-functional teams** that own an outcome end to end.\n- **Working output over documentation** — demonstrate, then refine.\n- **Regular retrospectives** to improve the process itself.\n\nThe intent is to reduce the cost of being wrong, not to move faster for its own sake.`;
-  }
-  if (text.includes("summar")) {
-    return `Here's a structured summary:\n\n**Objective** — what the project is trying to achieve.\n**Status** — on track, with two dependencies pending.\n**Risks** — unclear ownership on integration; timeline is tight around review cycles.\n**Next steps** — confirm owners, lock scope, book the review.\n\nPaste the project details and I'll tailor this to your content.`;
-  }
-  if (text.includes("productiv")) {
-    return `Four changes with the largest effect:\n\n1. **Protect one 90-minute focus block** each morning before meetings.\n2. **Limit work in progress** to three active tasks.\n3. **Batch communication** into two fixed windows.\n4. **Close the loop daily** — a 10-minute review beats a weekly catch-up.\n\nStart with one for a week before adding the next.`;
-  }
-  if (text.includes("meeting")) {
-    return `To prepare effectively:\n\n- **Purpose** — write the decision the meeting must produce.\n- **Pre-read** — send context 24 hours ahead so time is spent deciding.\n- **Agenda** — three items maximum, each with a time box.\n- **Roles** — facilitator, note-taker, decision owner.\n- **Close** — restate decisions, owners, and dates before ending.`;
-  }
-  return `Here's how I'd approach "${message.trim()}":\n\n- **Clarify the outcome** you want before choosing the method.\n- **Break it into two or three concrete steps** you can start today.\n- **Set a checkpoint** so you can course-correct early.\n\nTell me more about the context and I'll make this specific to your situation.`;
+
+  return personalize(body, profile);
 }
+
